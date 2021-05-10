@@ -129,6 +129,7 @@ function! s:on_event(event) abort
   endif
 
   call s:get_completed_item_and_store(filetype)
+  call echodoc#nvim_lsp#fetch_cursor_signature_and_store(filetype)
   let dicts = filter(copy(s:echodoc_dicts),
         \ "empty(get(v:val, 'filetypes', {}))
         \  || get(v:val.filetypes, filetype, 0)")

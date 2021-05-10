@@ -122,6 +122,14 @@ g:echodoc#type					*g:echodoc#type*
 
 		Default: "echo"
 
+g:echodoc#use_nvim_lsp					*g:echodoc#use_nvim_lsp*
+		fetch signature by nvim built-in lsp.
+
+		If it is v:true, Signatures will be fetched and
+		override hints by completion.
+
+		Default: v:false
+
 ------------------------------------------------------------------------------
 FUNCTIONS 					*echodoc-functions*
 

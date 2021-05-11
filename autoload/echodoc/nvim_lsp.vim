@@ -15,7 +15,9 @@ function! echodoc#nvim_lsp#fetch_cursor_signature_and_store(filetype) abort
     local cur = vim.lsp.util.make_position_params()
     vim.lsp.buf_request(0, "textDocument/signatureHelp", cur,
       function(err, _method, result, _client_id, _bufnr, _config)
-        if not result then return end
+        if type(result) ~= "table" or type(result.signatures) ~= "table" then
+          return
+        end
         local signature = result.signatures[1]
         if not signature then return end
         -- Discard signature.parameters

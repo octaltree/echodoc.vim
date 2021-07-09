@@ -138,7 +138,7 @@ function! s:on_event(event) abort
     return
   endif
 
-  let cur_text = echodoc#util#get_func_text()
+  let [line, cur_text] = echodoc#util#get_func_text()
   " No function text was found
   if cur_text ==# '' && default_only
     call s:clear_documentation()
@@ -147,6 +147,9 @@ function! s:on_event(event) abort
 
   let echodoc = s:find_and_format_item(dicts, cur_text, filetype)
   if !empty(echodoc)
+    for doc in echodoc
+      let doc.line = line
+    endfor
     let b:echodoc = echodoc
     call s:display(echodoc, filetype)
   elseif exists('b:echodoc')
@@ -239,7 +242,7 @@ function! s:display(echodoc, filetype) abort
     call nvim_buf_set_virtual_text(
           \ bufnr('%'), s:echodoc_id, line('.') - 1, chunks, {})
   elseif echodoc#is_floating()
-    let hunk = join(map(copy(a:echodoc), "v:val.text"), "")
+    let hunk = join(map(copy(a:echodoc), 'v:val.text'), '')
     let window_width = strlen(hunk)
 
     let identifier_pos = match(getline('.'), a:echodoc[0].text)
@@ -249,9 +252,13 @@ function! s:display(echodoc, filetype) abort
       let identifier_pos =  cursor_pos - identifier_pos
     endif
     call nvim_buf_set_lines(s:floating_buf, 0, -1, v:true, [hunk])
-    let opts = {'relative': 'cursor', 'width': window_width,
-        \ 'height': 1, 'col': -identifier_pos + 1,
-        \ 'row': 0, 'anchor': 'SW'}
+    let opts = {
+          \ 'relative': 'editor',
+          \ 'width': window_width,
+          \ 'height': 1,
+          \ 'col': -identifier_pos + 1,
+          \ 'row': a:echodoc[0].line - 1, 'anchor': 'SW'
+          \ }
     if s:win == v:null
       let s:win = nvim_open_win(s:floating_buf, 0, opts)
 
@@ -261,12 +268,11 @@ function! s:display(echodoc, filetype) abort
       call nvim_win_set_option(s:win, 'cursorcolumn', v:false)
       call nvim_win_set_option(s:win, 'colorcolumn', '')
       call nvim_win_set_option(s:win, 'conceallevel', 2)
-      call nvim_win_set_option(s:win, 'signcolumn', "no")
+      call nvim_win_set_option(s:win, 'signcolumn', 'no')
       call nvim_win_set_option(s:win, 'winhl', 'Normal:EchoDocFloat')
 
-      call nvim_buf_set_option(s:floating_buf, "buftype", "nofile")
-      call nvim_buf_set_option(s:floating_buf, "bufhidden", "delete")
-
+      call nvim_buf_set_option(s:floating_buf, 'buftype', 'nofile')
+      call nvim_buf_set_option(s:floating_buf, 'bufhidden', 'delete')
     else
       call nvim_win_set_config(s:win, opts)
     endif
@@ -277,8 +283,10 @@ function! s:display(echodoc, filetype) abort
     for doc in a:echodoc
       let len_current_chunk = strlen(doc.text)
       if has_key(doc, 'highlight')
-        call nvim_buf_add_highlight(s:floating_buf, s:echodoc_id, doc.highlight, 0,
-              \ last_chunk_index, len_current_chunk+last_chunk_index)
+        call nvim_buf_add_highlight(
+              \ s:floating_buf, s:echodoc_id, doc.highlight, 0,
+              \ last_chunk_index,
+              \ len_current_chunk + last_chunk_index)
       endif
       let last_chunk_index += len_current_chunk
     endfor
@@ -297,7 +305,7 @@ function! s:display(echodoc, filetype) abort
       let col = col('.') - ident_idx - 1
 
       let s:win = popup_create(text, {
-            \ 'line': 'cursor-1',
+            \ 'line': a:echodoc[0].line - 1,
             \ 'col': 'cursor-' . col,
             \ 'maxheight': 1,
             \ 'wrap': v:false,
